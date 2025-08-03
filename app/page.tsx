@@ -451,23 +451,27 @@ export default function QuizApp() {
       const hasLocalData = loadQuestionsFromLocal()
 
       if (supabase && isOnline) {
-        // クラウドデータを読み込み
-        await loadQuestionsFromCloud()
-
-        // 初回起動でクラウドにデータがない場合のみデフォルトデータを設定
-        if (!isInitialized && questions.length === 0) {
+        try {
+          // クラウドデータを読み込み
+          await loadQuestionsFromCloud()
+        } catch (error) {
+          console.error("クラウド同期エラー:", error)
+          // クラウド同期に失敗した場合の処理
+          if (!hasLocalData && !isInitialized) {
+            const defaultQuestions = getDefaultQuestions()
+            setQuestions(defaultQuestions)
+            localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
+            localStorage.setItem("quiz-app-initialized", "true")
+          }
+        }
+      } else {
+        // Supabaseが利用できない場合、またはオフラインの場合
+        if (!hasLocalData) {
           const defaultQuestions = getDefaultQuestions()
-          await saveToCloud(defaultQuestions)
           setQuestions(defaultQuestions)
           localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
           localStorage.setItem("quiz-app-initialized", "true")
         }
-      } else if (!hasLocalData && !isInitialized) {
-        // ローカルデータもクラウドも利用できず、初回起動の場合のみデフォルトデータ
-        const defaultQuestions = getDefaultQuestions()
-        setQuestions(defaultQuestions)
-        localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
-        localStorage.setItem("quiz-app-initialized", "true")
       }
     }
 
