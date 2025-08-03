@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Plus, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,29 +21,77 @@ interface Question {
 }
 
 export default function QuizApp() {
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      id: "1",
-      question: "イタリアのバジルを使った料理といえば？",
-      answer: "カプレーゼ",
-      majorCategory: "世界の料理",
-      minorCategory: "イタリア",
-    },
-    {
-      id: "2",
-      question: "リゾット・アッラ・ミラネーゼについて説明",
-      answer: "訳は『ミラノ風リゾット』。使うのはサフラン、パルメザンチーズなど",
-      majorCategory: "世界の料理",
-      minorCategory: "イタリア",
-    },
-    {
-      id: "3",
-      question: "『ブイヤベース』の説明",
-      answer: "フランスの郷土料理。魚介類を煮込み、トマトやサフランで香りをつけたスープ",
-      majorCategory: "世界の料理",
-      minorCategory: "フランス",
-    },
-  ])
+  const [questions, setQuestions] = useState<Question[]>([])
+
+  // questionsのstateの後に以下のuseEffectを追加
+  // ページ読み込み時にlocalStorageからデータを復元
+  useEffect(() => {
+    const savedQuestions = localStorage.getItem("quiz-questions")
+    if (savedQuestions) {
+      try {
+        const parsedQuestions = JSON.parse(savedQuestions)
+        setQuestions(parsedQuestions)
+      } catch (error) {
+        console.error("データの読み込みに失敗しました:", error)
+        // エラーの場合はデフォルトデータを使用
+        setQuestions([
+          {
+            id: "1",
+            question: "イタリアのバジルを使った料理といえば？",
+            answer: "カプレーゼ",
+            majorCategory: "世界の料理",
+            minorCategory: "イタリア",
+          },
+          {
+            id: "2",
+            question: "リゾット・アッラ・ミラネーゼについて説明",
+            answer: "訳は『ミラノ風リゾット』。使うのはサフラン、パルメザンチーズなど",
+            majorCategory: "世界の料理",
+            minorCategory: "イタリア",
+          },
+          {
+            id: "3",
+            question: "『ブイヤベース』の説明",
+            answer: "フランスの郷土料理。魚介類を煮込み、トマトやサフランで香りをつけたスープ",
+            majorCategory: "世界の料理",
+            minorCategory: "フランス",
+          },
+        ])
+      }
+    } else {
+      // 初回アクセス時はデフォルトデータを設定
+      setQuestions([
+        {
+          id: "1",
+          question: "イタリアのバジルを使った料理といえば？",
+          answer: "カプレーゼ",
+          majorCategory: "世界の料理",
+          minorCategory: "イタリア",
+        },
+        {
+          id: "2",
+          question: "リゾット・アッラ・ミラネーゼについて説明",
+          answer: "訳は『ミラノ風リゾット』。使うのはサフラン、パルメザンチーズなど",
+          majorCategory: "世界の料理",
+          minorCategory: "イタリア",
+        },
+        {
+          id: "3",
+          question: "『ブイヤベース』の説明",
+          answer: "フランスの郷土料理。魚介類を煮込み、トマトやサフランで香りをつけたスープ",
+          majorCategory: "世界の料理",
+          minorCategory: "フランス",
+        },
+      ])
+    }
+  }, [])
+
+  // questionsが変更されるたびにlocalStorageに保存
+  useEffect(() => {
+    if (questions.length > 0) {
+      localStorage.setItem("quiz-questions", JSON.stringify(questions))
+    }
+  }, [questions])
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
