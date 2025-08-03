@@ -1,7 +1,6 @@
 "use client"
-
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Plus, Edit, Trash2, Smartphone, Monitor } from "lucide-react"
+import { Plus, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Question {
   id: string
@@ -18,7 +16,6 @@ interface Question {
   majorCategory: string
   minorCategory: string
   created_at?: string
-  updated_at?: string
 }
 
 // デフォルトデータ（41問）
@@ -219,7 +216,7 @@ const getDefaultQuestions = (): Question[] => [
   {
     id: "25",
     question: "イタリアの緑のパスタソースと言えば、名前と作り方は？",
-    answer: "ペスト・ジェノベーゼ。バジル＋パルメザンチーズ＋ニンニク＋オリーブ油。イタリア・ジェノバ地方のソース。",
+    answer: "バジル＋パルメザンチーズ＋ニンニク＋オリーブ油。イタリア・ジェノバ地方のソース。",
     majorCategory: "世界の料理",
     minorCategory: "イタリア",
     created_at: new Date().toISOString(),
@@ -267,7 +264,7 @@ const getDefaultQuestions = (): Question[] => [
   {
     id: "31",
     question: "トンポーロウとは？スパイスは？",
-    answer: "中国浙江省の料理で、豚の角煮。スターアニス（八角）、シナモン、クローブが使われる。",
+    answer: "中国浙江省の料理で、豚の角煮。スターアニス（八角）、シナモン、グローブが使われる。",
     majorCategory: "世界の料理",
     minorCategory: "中国",
     created_at: new Date().toISOString(),
@@ -275,7 +272,7 @@ const getDefaultQuestions = (): Question[] => [
   {
     id: "32",
     question: "トムヤンクンに使われるスパイス・ハーブは？",
-    answer: "赤唐辛子、レモングラス、カフィアライムリーフ、パクチー、ライム、エビ。",
+    answer: "赤唐辛子、レモングラス、カフェライムリーフ、パクチー、ライム、エビ。",
     majorCategory: "世界の料理",
     minorCategory: "タイ",
     created_at: new Date().toISOString(),
@@ -354,74 +351,8 @@ const getDefaultQuestions = (): Question[] => [
   },
 ]
 
-export default function QuizApp() {
+export default function SimpleQuizApp() {
   const [questions, setQuestions] = useState<Question[]>([])
-  const [isOnline, setIsOnline] = useState(true)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [syncError, setSyncError] = useState<string | null>(null)
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
-  const [deviceInfo, setDeviceInfo] = useState<string>("")
-
-  // デバイス情報を取得
-  useEffect(() => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    setDeviceInfo(isMobile ? "スマートフォン" : "PC")
-  }, [])
-
-  // オンライン状態の監視
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    setIsOnline(navigator.onLine)
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
-
-  // 初期データ読み込み
-  useEffect(() => {
-    const initializeData = () => {
-      const savedQuestions = localStorage.getItem("quiz-questions")
-      const isInitialized = localStorage.getItem("quiz-app-initialized")
-
-      if (savedQuestions && isInitialized) {
-        try {
-          const parsedQuestions = JSON.parse(savedQuestions)
-          if (parsedQuestions.length > 0) {
-            setQuestions(parsedQuestions)
-            console.log(`✅ ローカルデータを読み込み: ${parsedQuestions.length}問`)
-            return
-          }
-        } catch (error) {
-          console.error("ローカルデータの読み込みエラー:", error)
-        }
-      }
-
-      // 初回起動またはデータがない場合はデフォルトデータを設定
-      const defaultQuestions = getDefaultQuestions()
-      setQuestions(defaultQuestions)
-      localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
-      localStorage.setItem("quiz-app-initialized", "true")
-      localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
-      console.log(`✅ デフォルトデータを設定: ${defaultQuestions.length}問`)
-    }
-
-    initializeData()
-  }, [])
-
-  // データを保存する関数
-  const saveQuestions = useCallback((newQuestions: Question[]) => {
-    setQuestions(newQuestions)
-    localStorage.setItem("quiz-questions", JSON.stringify(newQuestions))
-    localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
-    console.log(`💾 データを保存: ${newQuestions.length}問`)
-  }, [])
-
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null)
   const [formData, setFormData] = useState({
@@ -432,6 +363,31 @@ export default function QuizApp() {
   })
 
   const categoryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+
+  // 初期データ読み込み
+  useEffect(() => {
+    const savedQuestions = localStorage.getItem("quiz-questions")
+    if (savedQuestions) {
+      try {
+        const parsedQuestions = JSON.parse(savedQuestions)
+        setQuestions(parsedQuestions)
+      } catch (error) {
+        console.error("ローカルデータの読み込みエラー:", error)
+        setQuestions(getDefaultQuestions())
+      }
+    } else {
+      // 初回起動時はデフォルトデータを設定
+      const defaultQuestions = getDefaultQuestions()
+      setQuestions(defaultQuestions)
+      localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
+    }
+  }, [])
+
+  // データを保存する関数
+  const saveQuestions = useCallback((newQuestions: Question[]) => {
+    setQuestions(newQuestions)
+    localStorage.setItem("quiz-questions", JSON.stringify(newQuestions))
+  }, [])
 
   // カテゴリ別に問題を整理
   const organizedQuestions = questions.reduce(
@@ -472,9 +428,7 @@ export default function QuizApp() {
   const handleEditQuestion = () => {
     if (!editingQuestion) return
 
-    const updatedQuestions = questions.map((q) =>
-      q.id === editingQuestion.id ? { ...q, ...formData, updated_at: new Date().toISOString() } : q,
-    )
+    const updatedQuestions = questions.map((q) => (q.id === editingQuestion.id ? { ...q, ...formData } : q))
 
     saveQuestions(updatedQuestions)
     setEditingQuestion(null)
@@ -508,40 +462,13 @@ export default function QuizApp() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">一問一答テスト問題集</h1>
-
-          {/* デバイス情報と状態表示 */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs bg-blue-100 px-2 py-1 rounded">
-              {deviceInfo === "スマートフォン" ? <Smartphone className="w-3 h-3" /> : <Monitor className="w-3 h-3" />}
-              <span>{deviceInfo}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              {isOnline ? (
-                <div className="flex items-center gap-1 text-xs text-green-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  オンライン
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 text-xs text-red-600">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  オフライン
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="text-xs text-gray-500">ローカル保存版</div>
         </div>
 
-        {/* 現在の状態表示 */}
-        <Alert className="mb-4">
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>📱 現在は{deviceInfo}でローカル保存中です。次のステップでスマホ・PC間の同期機能を追加します。</span>
-              <div className="text-xs text-gray-500">
-                全{questions.length}問 | {majorCategories.length}カテゴリ
-              </div>
-            </div>
-          </AlertDescription>
-        </Alert>
+        {/* 問題数表示 */}
+        <div className="text-sm text-gray-600 mb-4 text-center">
+          全{questions.length}問 | {majorCategories.length}カテゴリ
+        </div>
 
         {/* カテゴリリンクエリア */}
         <Card className="mb-6">
