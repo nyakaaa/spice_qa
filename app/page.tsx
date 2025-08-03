@@ -33,339 +33,6 @@ if (supabaseUrl && supabaseKey) {
   supabase = createClient(supabaseUrl, supabaseKey)
 }
 
-// デフォルトデータ
-const getDefaultQuestions = (): Question[] => [
-  {
-    id: "1",
-    question: "下ごしらえにスパイスを使う目的は？",
-    answer: "臭みとり、香りをしっかりつける、色を出す。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "下ごしらえ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    question: "下ごしらえでのスパイスの使い方は？",
-    answer: "素材にまぶす、漬け込む、下茹でに使う。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "下ごしらえ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    question: "下ごしらえではどのタイプのスパイスを使うのが良い？",
-    answer: "まんべんなく香りをつけるならパウダー、臭みとりやマリネにはホールスパイス。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "下ごしらえ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    question: "調理中にスパイスを使う目的は？",
-    answer: "香り、辛み、色をじっくり出すため。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "調理中",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    question: "調理中のスパイスの使い方は？",
-    answer: "焼く前に振って一緒に加熱する。煮込む時や炊く時に加える。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "調理中",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "6",
-    question: "調理中におすすめのスパイスは？（ドライ、フレッシュ）",
-    answer:
-      "ドライ: ホールでじっくり香りを出す。フレッシュ: ローズマリー、タイム、セージ、オレガノなどの強めのハーブ。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "調理中",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "7",
-    question: "仕上げにスパイスを使う目的は？",
-    answer: "香辛色を瞬時に加える。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "仕上げ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "8",
-    question: "仕上げのスパイスの使い方は？",
-    answer: "出来上がりに振りかける。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "仕上げ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "9",
-    question: "仕上げにおすすめのスパイスは？（ドライ、フレッシュ）",
-    answer: "ドライ: パウダータイプ。フレッシュ: ディル、チャービル、チャイブ、パセリなど香りがマイルドなもの。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "仕上げ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "10",
-    question: "ハーブを加えすぎることを何という？",
-    answer: "オーバースパイス。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "ハーブの扱い方",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "11",
-    question: "フレッシュハーブとドライハーブの使用量の違いは？",
-    answer: "ドライ : フレッシュ = 1 : 3。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "ハーブの扱い方",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "12",
-    question: "1:3の比率に当てはまらないフレッシュハーブは？",
-    answer: "ローズマリーやタイム（乾燥しても風味があまり変わらない）。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "ハーブの扱い方",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "13",
-    question: "フレッシュハーブの下準備での注意点は？",
-    answer: "調理前に使う分だけ水洗いし、ペーパーで優しく包んで水気を取る。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "ハーブの扱い方",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "14",
-    question: "フレッシュハーブを刻む時の注意点は？",
-    answer: "金気のある包丁は使わず、ステンレスかセラミックの包丁を使用。まな板にペーパーを敷いてカットする。",
-    majorCategory: "スパイスの基本知識",
-    minorCategory: "ハーブの扱い方",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "15",
-    question: "クスクスは何のスパイスを使ったどこの料理？",
-    answer: "クミンやラセラヌーを使った北アフリカ（モロッコ）の料理。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "16",
-    question: "クスクスはどんな料理？",
-    answer: "クスクスという小粒パスタに肉野菜の煮込みスープをかけて食べる。ハリッサを添えることが多い。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "17",
-    question: "ハリッサとは？",
-    answer: "クミン、キャラウェイ、コリアンダー等のシード系スパイス＋唐辛子＋ガーリック＋オリーブ油で作るペースト。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "18",
-    question: "刻みパセリのサラダはどこの何という料理？",
-    answer: "レバノンの「タッブーレ」。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "19",
-    question: "デュカという料理はどんなもの？",
-    answer: "シード系スパイスとナッツを合わせたミックススパイスで、オリーブ油に浸したパンにつけて食べる。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "20",
-    question: "デュカはどこの料理で、どんなスパイスが使われている？",
-    answer: "北アフリカ〜中近東の料理。コリアンダー、ナッツ、ごま、クミンが使われている。",
-    majorCategory: "世界の料理",
-    minorCategory: "北アフリカ・中近東",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "21",
-    question: "イタリアのバジルを使った料理といえば？",
-    answer: "カプレーゼ",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "22",
-    question: "リゾット・アッラ・ミラネーゼについて説明は？",
-    answer: "訳は『ミラノ風リゾット』。使うのはサフラン、パルメザンチーズなど。",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "23",
-    question: "イタリアのサルティンボッカに使われているハーブは？",
-    answer: "セージ",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "24",
-    question: "サルティンボッカはどんな料理？",
-    answer: "仔牛肉の薄切りに生ハム、セージをのせてバターソテー。料理名は『口に飛び込む』の意。",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "25",
-    question: "イタリアの緑のパスタソースと言えば、名前と作り方は？",
-    answer: "バジル＋パルメザンチーズ＋ニンニク＋オリーブ油。イタリア・ジェノバ地方のソース。",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "26",
-    question: "カルボナーラの代表的な材料と発祥の地域は？",
-    answer: "ベーコン＋卵＋ブラックペッパー。発祥はローマ。",
-    majorCategory: "世界の料理",
-    minorCategory: "イタリア",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "27",
-    question: "『ブイヤベース』の説明は？",
-    answer: "フランスの郷土料理。魚介類を煮込み、トマトやサフランで香りをつけたスープ。",
-    majorCategory: "世界の料理",
-    minorCategory: "フランス",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "28",
-    question: "『パエリア』の発祥、意味、使われるスパイスは？",
-    answer: "バレンシア発祥。スペイン語で『フライパン』を意味し、サフランが使われる。",
-    majorCategory: "世界の料理",
-    minorCategory: "スペイン",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "29",
-    question: "ハンガリーのスープ料理とスパイスは？",
-    answer: "ハンガリアングラーシュ。スパイスはパプリカ。",
-    majorCategory: "世界の料理",
-    minorCategory: "東欧",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "30",
-    question: "ボルシチの発祥と食べられる国、材料は？",
-    answer: "ウクライナ発祥。ロシアやヨーロッパで食べられている。材料は牛肉、ビーツ、ディル、サワークリーム。",
-    majorCategory: "世界の料理",
-    minorCategory: "東欧",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "31",
-    question: "トンポーロウとは？スパイスは？",
-    answer: "中国浙江省の料理で、豚の角煮。スターアニス（八角）、シナモン、グローブが使われる。",
-    majorCategory: "世界の料理",
-    minorCategory: "中国",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "32",
-    question: "トムヤンクンに使われるスパイス・ハーブは？",
-    answer: "赤唐辛子、レモングラス、カフェライムリーフ、パクチー、ライム、エビ。",
-    majorCategory: "世界の料理",
-    minorCategory: "タイ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "33",
-    question: "バインセオとは？スパイス名と生地の材料は？",
-    answer: "ベトナム風お好み焼き。スパイスはターメリック。生地は米粉。",
-    majorCategory: "世界の料理",
-    minorCategory: "ベトナム",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "34",
-    question: "アメリカのテクスメクスとは？",
-    answer: "テキサス生まれのメキシコ風アメリカ料理。",
-    majorCategory: "世界の料理",
-    minorCategory: "アメリカ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "35",
-    question: "テクスメクスに使われる代表的な料理とスパイスは？",
-    answer: "チリコンカン。スパイスはチリパウダー、オレガノ。",
-    majorCategory: "世界の料理",
-    minorCategory: "アメリカ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "36",
-    question: "チリパウダーの原料は？",
-    answer: "ガーリック、オレガノ、クミン、パプリカ。",
-    majorCategory: "世界の料理",
-    minorCategory: "アメリカ",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "37",
-    question: "モロッコティーとは？",
-    answer: "ガンパウダー（中国緑茶）＋ミント＋たっぷりの角砂糖のポットに熱湯を注ぐ。",
-    majorCategory: "飲み物・ドリンク",
-    minorCategory: "お茶",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "38",
-    question: "カルダモンコーヒーはどこの何という飲み物？",
-    answer: "サウジアラビアの「ガーワ（アラビアンコーヒー）」。",
-    majorCategory: "飲み物・ドリンク",
-    minorCategory: "コーヒー",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "39",
-    question: "アメリカの冬の定番ドリンクと材料は？",
-    answer: "エッグノッグ。材料は牛乳、卵、ナツメグ。",
-    majorCategory: "飲み物・ドリンク",
-    minorCategory: "その他",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "40",
-    question: "鍋で煮出して作るメキシコのコーヒーとスパイスは？",
-    answer: "カフェデオーヤ。スパイスはシナモン。",
-    majorCategory: "飲み物・ドリンク",
-    minorCategory: "コーヒー",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "41",
-    question: "ヘミングウェイが愛したドリンク、国、材料は？",
-    answer: "モヒート。キューバ発祥。ラム酒、ミント、ライムが材料。",
-    majorCategory: "飲み物・ドリンク",
-    minorCategory: "カクテル",
-    created_at: new Date().toISOString(),
-  },
-]
-
 export default function QuizApp() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [isOnline, setIsOnline] = useState(true)
@@ -413,9 +80,6 @@ export default function QuizApp() {
         localStorage.setItem("quiz-questions", JSON.stringify(data))
         localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
         setLastSyncTime(new Date())
-
-        // 初回セットアップ完了をマーク
-        localStorage.setItem("quiz-app-initialized", "true")
       }
     } catch (error) {
       console.error("クラウドからの読み込みエラー:", error)
@@ -431,10 +95,8 @@ export default function QuizApp() {
     if (savedQuestions) {
       try {
         const parsedQuestions = JSON.parse(savedQuestions)
-        if (parsedQuestions.length > 0) {
-          setQuestions(parsedQuestions)
-          return true
-        }
+        setQuestions(parsedQuestions)
+        return true
       } catch (error) {
         console.error("ローカルデータの読み込みエラー:", error)
       }
@@ -445,33 +107,42 @@ export default function QuizApp() {
   // 初期データ読み込み
   useEffect(() => {
     const initializeData = async () => {
-      const isInitialized = localStorage.getItem("quiz-app-initialized")
-
       // まずローカルデータを読み込み（即座に表示）
       const hasLocalData = loadQuestionsFromLocal()
 
       if (supabase && isOnline) {
-        try {
-          // クラウドデータを読み込み
-          await loadQuestionsFromCloud()
-        } catch (error) {
-          console.error("クラウド同期エラー:", error)
-          // クラウド同期に失敗した場合の処理
-          if (!hasLocalData && !isInitialized) {
-            const defaultQuestions = getDefaultQuestions()
-            setQuestions(defaultQuestions)
-            localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
-            localStorage.setItem("quiz-app-initialized", "true")
-          }
-        }
-      } else {
-        // Supabaseが利用できない場合、またはオフラインの場合
-        if (!hasLocalData) {
-          const defaultQuestions = getDefaultQuestions()
-          setQuestions(defaultQuestions)
-          localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
-          localStorage.setItem("quiz-app-initialized", "true")
-        }
+        // クラウドデータを読み込み（より新しいデータがあれば更新）
+        await loadQuestionsFromCloud()
+      } else if (!hasLocalData) {
+        // ローカルデータもクラウドも利用できない場合はデフォルトデータ
+        const defaultQuestions = [
+          {
+            id: "1",
+            question: "イタリアのバジルを使った料理といえば？",
+            answer: "カプレーゼ",
+            majorCategory: "世界の料理",
+            minorCategory: "イタリア",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: "2",
+            question: "リゾット・アッラ・ミラネーゼについて説明",
+            answer: "訳は『ミラノ風リゾット』。使うのはサフラン、パルメザンチーズなど",
+            majorCategory: "世界の料理",
+            minorCategory: "イタリア",
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: "3",
+            question: "『ブイヤベース』の説明",
+            answer: "フランスの郷土料理。魚介類を煮込み、トマトやサフランで香りをつけたスープ",
+            majorCategory: "世界の料理",
+            minorCategory: "フランス",
+            created_at: new Date().toISOString(),
+          },
+        ]
+        setQuestions(defaultQuestions)
+        localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
       }
     }
 
@@ -494,9 +165,7 @@ export default function QuizApp() {
         (payload: any) => {
           console.log("リアルタイム更新:", payload)
           // 他のデバイスからの変更を受信したら再読み込み
-          setTimeout(() => {
-            loadQuestionsFromCloud()
-          }, 1000) // 1秒後に読み込み（データベースの更新完了を待つ）
+          loadQuestionsFromCloud()
         },
       )
       .subscribe((status: string) => {
@@ -510,13 +179,13 @@ export default function QuizApp() {
     }
   }, [supabase, isOnline, loadQuestionsFromCloud])
 
-  // 定期的な同期チェック（60秒ごと）
+  // 定期的な同期チェック（30秒ごと）
   useEffect(() => {
     if (!supabase || !isOnline) return
 
     const interval = setInterval(() => {
       loadQuestionsFromCloud()
-    }, 60000) // 60秒ごと
+    }, 30000) // 30秒ごと
 
     return () => clearInterval(interval)
   }, [supabase, isOnline, loadQuestionsFromCloud])
@@ -789,11 +458,6 @@ export default function QuizApp() {
           <div className="text-xs text-gray-500 mb-4 text-center">最終同期: {lastSyncTime.toLocaleString("ja-JP")}</div>
         )}
 
-        {/* 問題数表示 */}
-        <div className="text-sm text-gray-600 mb-4 text-center">
-          全{questions.length}問 | {majorCategories.length}カテゴリ
-        </div>
-
         {/* カテゴリリンクエリア */}
         <Card className="mb-6">
           <CardHeader>
@@ -892,9 +556,7 @@ export default function QuizApp() {
 
               {Object.entries(organizedQuestions[majorCategory]).map(([minorCategory, categoryQuestions]) => (
                 <div key={minorCategory} className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3 text-green-600 ml-4">
-                    {minorCategory} ({categoryQuestions.length}問)
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-3 text-green-600 ml-4">{minorCategory}</h3>
 
                   <Accordion type="multiple" className="space-y-2">
                     {categoryQuestions.map((question, index) => (
