@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
-import { Plus, Edit, Trash2, Cloud, CloudOff, Loader2 } from "lucide-react"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { Plus, Edit, Trash2, Cloud, CloudOff, Loader2, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -39,12 +39,20 @@ export default function QuizApp() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
 
   // オンライン状態の監視
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
+    const handleOnline = () => {
+      setIsOnline(true)
+      // オンライン復帰時に同期
+      if (supabase) {
+        loadQuestionsFromCloud()
+      }
+    }
     const handleOffline = () => setIsOnline(false)
 
+    setIsOnline(navigator.onLine)
     window.addEventListener("online", handleOnline)
     window.addEventListener("offline", handleOffline)
 
@@ -54,39 +62,59 @@ export default function QuizApp() {
     }
   }, [])
 
-  // データの読み込み（クラウド優先、ローカルフォールバック）
-  useEffect(() => {
-    loadQuestions()
-  }, [])
-
-  const loadQuestions = async () => {
-    setIsSyncing(true)
-    setSyncError(null)
+  // クラウドからデータを読み込む関数
+  const loadQuestionsFromCloud = useCallback(async () => {
+    if (!supabase || !isOnline) return
 
     try {
-      // Supabaseが利用可能でオンラインの場合はクラウドから読み込み
-      if (supabase && isOnline) {
-        const { data, error } = await supabase.from("questions").select("*").order("created_at", { ascending: true })
+      setIsSyncing(true)
+      setSyncError(null)
 
-        if (error) throw error
+      const { data, error } = await supabase.from("questions").select("*").order("created_at", { ascending: true })
 
-        if (data && data.length > 0) {
-          setQuestions(data)
-          // クラウドデータをローカルにも保存
-          localStorage.setItem("quiz-questions", JSON.stringify(data))
-          setLastSyncTime(new Date())
-          setIsSyncing(false)
-          return
-        }
+      if (error) throw error
+
+      if (data) {
+        setQuestions(data)
+        // クラウドデータをローカルにも保存
+        localStorage.setItem("quiz-questions", JSON.stringify(data))
+        localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
+        setLastSyncTime(new Date())
       }
+    } catch (error) {
+      console.error("クラウドからの読み込みエラー:", error)
+      setSyncError("クラウドからの読み込みに失敗しました")
+    } finally {
+      setIsSyncing(false)
+    }
+  }, [supabase, isOnline])
 
-      // クラウドにデータがない場合やオフラインの場合はローカルから読み込み
-      const savedQuestions = localStorage.getItem("quiz-questions")
-      if (savedQuestions) {
+  // ローカルからデータを読み込む関数
+  const loadQuestionsFromLocal = useCallback(() => {
+    const savedQuestions = localStorage.getItem("quiz-questions")
+    if (savedQuestions) {
+      try {
         const parsedQuestions = JSON.parse(savedQuestions)
         setQuestions(parsedQuestions)
-      } else {
-        // デフォルトデータを設定
+        return true
+      } catch (error) {
+        console.error("ローカルデータの読み込みエラー:", error)
+      }
+    }
+    return false
+  }, [])
+
+  // 初期データ読み込み
+  useEffect(() => {
+    const initializeData = async () => {
+      // まずローカルデータを読み込み（即座に表示）
+      const hasLocalData = loadQuestionsFromLocal()
+
+      if (supabase && isOnline) {
+        // クラウドデータを読み込み（より新しいデータがあれば更新）
+        await loadQuestionsFromCloud()
+      } else if (!hasLocalData) {
+        // ローカルデータもクラウドも利用できない場合はデフォルトデータ
         const defaultQuestions = [
           {
             id: "1",
@@ -116,59 +144,111 @@ export default function QuizApp() {
         setQuestions(defaultQuestions)
         localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
       }
-    } catch (error) {
-      console.error("データの読み込みに失敗しました:", error)
-      setSyncError("データの読み込みに失敗しました")
-
-      // エラーの場合はローカルデータを使用
-      const savedQuestions = localStorage.getItem("quiz-questions")
-      if (savedQuestions) {
-        const parsedQuestions = JSON.parse(savedQuestions)
-        setQuestions(parsedQuestions)
-      }
     }
 
-    setIsSyncing(false)
-  }
+    initializeData()
+  }, [loadQuestionsFromCloud, loadQuestionsFromLocal, isOnline])
 
-  // データの保存（クラウドとローカル両方）
-  const saveQuestions = async (newQuestions: Question[]) => {
-    // ローカルに即座に保存
-    localStorage.setItem("quiz-questions", JSON.stringify(newQuestions))
-    setQuestions(newQuestions)
+  // リアルタイム同期の設定
+  useEffect(() => {
+    if (!supabase || !isOnline) return
 
-    // オンラインでSupabaseが利用可能な場合はクラウドにも保存
-    if (supabase && isOnline) {
+    const channel = supabase
+      .channel("questions-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "questions",
+        },
+        (payload: any) => {
+          console.log("リアルタイム更新:", payload)
+          // 他のデバイスからの変更を受信したら再読み込み
+          loadQuestionsFromCloud()
+        },
+      )
+      .subscribe((status: string) => {
+        console.log("リアルタイム接続状態:", status)
+        setIsRealtimeConnected(status === "SUBSCRIBED")
+      })
+
+    return () => {
+      supabase.removeChannel(channel)
+      setIsRealtimeConnected(false)
+    }
+  }, [supabase, isOnline, loadQuestionsFromCloud])
+
+  // 定期的な同期チェック（30秒ごと）
+  useEffect(() => {
+    if (!supabase || !isOnline) return
+
+    const interval = setInterval(() => {
+      loadQuestionsFromCloud()
+    }, 30000) // 30秒ごと
+
+    return () => clearInterval(interval)
+  }, [supabase, isOnline, loadQuestionsFromCloud])
+
+  // クラウドにデータを保存する関数
+  const saveToCloud = useCallback(
+    async (questionsToSave: Question[]) => {
+      if (!supabase || !isOnline) return false
+
       try {
         setIsSyncing(true)
         setSyncError(null)
 
-        // 既存のデータを削除してから新しいデータを挿入
-        await supabase.from("questions").delete().neq("id", "")
+        // 既存のデータを削除
+        const { error: deleteError } = await supabase.from("questions").delete().neq("id", "")
 
-        const questionsToInsert = newQuestions.map((q) => ({
-          ...q,
-          updated_at: new Date().toISOString(),
-        }))
+        if (deleteError) throw deleteError
 
-        const { error } = await supabase.from("questions").insert(questionsToInsert)
+        // 新しいデータを挿入
+        if (questionsToSave.length > 0) {
+          const questionsToInsert = questionsToSave.map((q) => ({
+            ...q,
+            updated_at: new Date().toISOString(),
+          }))
 
-        if (error) throw error
+          const { error: insertError } = await supabase.from("questions").insert(questionsToInsert)
+
+          if (insertError) throw insertError
+        }
 
         setLastSyncTime(new Date())
+        return true
       } catch (error) {
-        console.error("クラウド同期に失敗しました:", error)
-        setSyncError("クラウド同期に失敗しました。ローカルに保存されています。")
+        console.error("クラウド保存エラー:", error)
+        setSyncError("クラウドへの保存に失敗しました")
+        return false
       } finally {
         setIsSyncing(false)
       }
-    }
-  }
+    },
+    [supabase, isOnline],
+  )
+
+  // データを保存する統合関数
+  const saveQuestions = useCallback(
+    async (newQuestions: Question[]) => {
+      // ローカルに即座に保存
+      setQuestions(newQuestions)
+      localStorage.setItem("quiz-questions", JSON.stringify(newQuestions))
+      localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
+
+      // クラウドにも保存を試行
+      if (supabase && isOnline) {
+        await saveToCloud(newQuestions)
+      }
+    },
+    [saveToCloud, supabase, isOnline],
+  )
 
   // 手動同期
   const handleManualSync = async () => {
     if (!supabase || !isOnline) return
-    await loadQuestions()
+    await loadQuestionsFromCloud()
   }
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -210,7 +290,7 @@ export default function QuizApp() {
   const handleAddQuestion = async () => {
     const lastQuestion = questions[questions.length - 1]
     const newQuestion: Question = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // より一意なID
       question: formData.question,
       answer: formData.answer,
       majorCategory: formData.majorCategory || lastQuestion?.majorCategory || "",
@@ -327,22 +407,31 @@ export default function QuizApp() {
 
           {/* 同期状態表示 */}
           <div className="flex items-center gap-2">
-            {isSyncing && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSyncing && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
             {supabase ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleManualSync}
-                disabled={!isOnline || isSyncing}
-                className="flex items-center gap-2"
-              >
-                {isOnline ? (
-                  <Cloud className="w-4 h-4 text-green-600" />
-                ) : (
-                  <CloudOff className="w-4 h-4 text-gray-400" />
-                )}
-                <span className="text-xs">{isOnline ? "オンライン" : "オフライン"}</span>
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleManualSync}
+                  disabled={!isOnline || isSyncing}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {isOnline && isRealtimeConnected ? (
+                    <Cloud className="w-4 h-4 text-green-600" />
+                  ) : isOnline ? (
+                    <Cloud className="w-4 h-4 text-yellow-600" />
+                  ) : (
+                    <CloudOff className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-xs">
+                    {isOnline && isRealtimeConnected ? "リアルタイム同期" : isOnline ? "オンライン" : "オフライン"}
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <CloudOff className="w-4 h-4" />
@@ -355,13 +444,18 @@ export default function QuizApp() {
         {/* 同期エラー表示 */}
         {syncError && (
           <Alert className="mb-4">
-            <AlertDescription>{syncError}</AlertDescription>
+            <AlertDescription className="flex items-center justify-between">
+              <span>{syncError}</span>
+              <Button variant="outline" size="sm" onClick={() => setSyncError(null)}>
+                閉じる
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
 
         {/* 最終同期時刻表示 */}
         {lastSyncTime && supabase && (
-          <div className="text-xs text-gray-500 mb-4 text-center">最終同期: {lastSyncTime.toLocaleString()}</div>
+          <div className="text-xs text-gray-500 mb-4 text-center">最終同期: {lastSyncTime.toLocaleString("ja-JP")}</div>
         )}
 
         {/* カテゴリリンクエリア */}
