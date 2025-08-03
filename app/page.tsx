@@ -407,18 +407,15 @@ export default function QuizApp() {
 
       if (error) throw error
 
-      if (data && data.length > 0) {
+      if (data) {
         setQuestions(data)
         // クラウドデータをローカルにも保存
         localStorage.setItem("quiz-questions", JSON.stringify(data))
         localStorage.setItem("quiz-questions-timestamp", Date.now().toString())
         setLastSyncTime(new Date())
-      } else {
-        // クラウドにデータがない場合はデフォルトデータを設定してクラウドに保存
-        const defaultQuestions = getDefaultQuestions()
-        await saveToCloud(defaultQuestions)
-        setQuestions(defaultQuestions)
-        localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
+
+        // 初回セットアップ完了をマーク
+        localStorage.setItem("quiz-app-initialized", "true")
       }
     } catch (error) {
       console.error("クラウドからの読み込みエラー:", error)
@@ -448,17 +445,29 @@ export default function QuizApp() {
   // 初期データ読み込み
   useEffect(() => {
     const initializeData = async () => {
+      const isInitialized = localStorage.getItem("quiz-app-initialized")
+
       // まずローカルデータを読み込み（即座に表示）
       const hasLocalData = loadQuestionsFromLocal()
 
       if (supabase && isOnline) {
-        // クラウドデータを読み込み（より新しいデータがあれば更新）
+        // クラウドデータを読み込み
         await loadQuestionsFromCloud()
-      } else if (!hasLocalData) {
-        // ローカルデータもクラウドも利用できない場合はデフォルトデータ
+
+        // 初回起動でクラウドにデータがない場合のみデフォルトデータを設定
+        if (!isInitialized && questions.length === 0) {
+          const defaultQuestions = getDefaultQuestions()
+          await saveToCloud(defaultQuestions)
+          setQuestions(defaultQuestions)
+          localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
+          localStorage.setItem("quiz-app-initialized", "true")
+        }
+      } else if (!hasLocalData && !isInitialized) {
+        // ローカルデータもクラウドも利用できず、初回起動の場合のみデフォルトデータ
         const defaultQuestions = getDefaultQuestions()
         setQuestions(defaultQuestions)
         localStorage.setItem("quiz-questions", JSON.stringify(defaultQuestions))
+        localStorage.setItem("quiz-app-initialized", "true")
       }
     }
 
